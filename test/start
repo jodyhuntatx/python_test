@@ -1,25 +1,32 @@
 #!/bin/bash
-export API_DIR=~/Conjur/python_test/py_client
 
-docker stop py_test
+# Generated client directory
+API_DIR=~/Conjur/python_test/py_client
 
-echo "Running Python Example..."
-docker run -d --rm					\
-  --name py_test					\
-  -v ${API_DIR}:/py_client				\
-  -v ${PWD}/python_client.py:/python_client.py		\
-  -v ${PWD}/policy:/config/policy			\
-  -v "/Users/josephhunt/Conjur/cybrsm-demos/etc/conjur-master-minikube-dev.pem:/config/conjur-cert.pem"	\
+# mount point for scripts and starting directory
+WORKDIR=/test/
+
+# Conjur server certificate for SSL server verification
+CONJUR_CERT=/Users/josephhunt/Conjur/cybrsm-demos/etc/conjur-master-minikube-dev.pem
+
+docker run -d --rm						\
+  -e "DEBUG=True"						\
+  --name py_test						\
+  -v ${API_DIR}:${WORKDIR}py_client				\
+  -v ${PWD}/bin/init_python.sh:${WORKDIR}init_python.sh		\
+  -v ${PWD}/bin/python_client.py:${WORKDIR}python_client.py	\
+  -v ${PWD}/policy:${WORKDIR}/policy				\
+  -v "${CONJUR_CERT}:${WORKDIR}conjur-cert.pem"			\
   -e "CONJUR_APPLIANCE_HOSTNAME=conjur-master-minikube"		\
   -e "CONJUR_ACCOUNT=dev"					\
   -e "CONJUR_AUTHN_LOGIN=admin"					\
   -e "CONJUR_AUTHN_API_KEY=$(keyring get conjur adminpwd)"	\
+  --workdir ${WORKDIR}						\
   --add-host "conjur-master-minikube:192.168.59.100"		\
-  k8s-app:alpine						\
-  bash -c "
-    python -m pip install -e /py_client ; 			\
-    sleep infinity
-  "
+  python:3							\
+  bash -c "sleep infinity"
 
 docker exec -it --user root py_test bash
 
+echo "Deleting py_test container as background job..."
+docker stop py_test > /dev/null 2>&1 &

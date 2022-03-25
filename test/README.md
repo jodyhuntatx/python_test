@@ -2,11 +2,11 @@
 
 This example is meant to give an example use case for OpenAPI spec generated clients.
 It covers using some of the most popular Conjur Open Source endpoints with Python:
-- Authenticate a user
-- Change user's own password
-- Rotate user's API key
-- Load the root policy
+- Authenticate an admin user
+- Rotate a user's API key
+- Load policies
 - Store and retrieve a secret
+- Delete a secret
 
 The `run` script is responsible for executing the example by environment-conscious means by:
 - If needed, generating a new Python client from the OpenAPI spec

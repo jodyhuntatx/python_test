@@ -1,10 +1,23 @@
 #!/bin/bash
 
 # Conjur Open API spec directory
-GEN_DIR=~/Conjur/conjur-openapi-spec-main
+#   see: https://github.com/cyberark/conjur-openapi-spec
+GEN_DIR=../conjur-openapi-spec-main
+
+# Conjur service configuration variables
+CONJUR_ACCOUNT=<conjur-account>
+CONJUR_APPLIANCE_HOSTNAME=<conjur-hostname>
+CONJUR_HOST_IP_ADDRESS=<conjur-host-ip-address>
+CONJUR_CERT=<path-to-my-conjur-server-pem-file>
+CONJUR_AUTHN_LOGIN=<admin-user-id>
+CONJUR_AUTHN_API_KEY=<admin-user-password>
+
+##############################################################
+# You should not need to edit anything below to run the demo.
+##############################################################
 
 # Generated client directory
-API_DIR=~/Conjur/python_test/py_client
+API_DIR=${PWD}/py_client
 
 pushd $GEN_DIR
 ./bin/generate_client -e -l python -o $API_DIR
@@ -14,9 +27,6 @@ popd
 # mount point for scripts and starting directory
 WORKDIR=/test/
 
-# Conjur server certificate for SSL server verification
-CONJUR_CERT=/Users/josephhunt/Conjur/cybrsm-demos/etc/conjur-master-minikube-dev.pem
-
 docker run -d --rm						\
   -e "DEBUG=False"						\
   --name py_test						\
@@ -25,12 +35,12 @@ docker run -d --rm						\
   -v ${PWD}/bin/python_client.py:${WORKDIR}python_client.py	\
   -v ${PWD}/policy:${WORKDIR}/policy				\
   -v "${CONJUR_CERT}:${WORKDIR}conjur-cert.pem"			\
-  -e "CONJUR_APPLIANCE_HOSTNAME=conjur-master-minikube"		\
-  -e "CONJUR_ACCOUNT=dev"					\
-  -e "CONJUR_AUTHN_LOGIN=admin"					\
-  -e "CONJUR_AUTHN_API_KEY=$(keyring get conjur adminpwd)"	\
+  -e "CONJUR_APPLIANCE_HOSTNAME=${CONJUR_APPLIANCE_HOSTNAME}"	\
+  -e "CONJUR_ACCOUNT=${CONJUR_ACCOUNT}"				\
+  -e "CONJUR_AUTHN_LOGIN=${CONJUR_AUTHN_LOGIN}"			\
+  -e "CONJUR_AUTHN_API_KEY=${CONJUR_AUTHN_API_KEY}"		\
   --workdir ${WORKDIR}						\
-  --add-host "conjur-master-minikube:192.168.59.100"		\
+  --add-host "${CONJUR_APPLIANCE_HOSTNAME}:${CONJUR_HOST_IP_ADDRESS}"	\
   python:3							\
   bash -c "sleep infinity"
 

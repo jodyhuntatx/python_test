@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Conjur Open API spec directory
+# Conjur Open API spec repo directory
 #   see: https://github.com/cyberark/conjur-openapi-spec
 GEN_DIR=../conjur-openapi-spec-main
 
@@ -12,22 +12,38 @@ CONJUR_CERT=<path-to-my-conjur-server-pem-file>
 CONJUR_AUTHN_LOGIN=<admin-user-id>
 CONJUR_AUTHN_API_KEY=<admin-user-password>
 
-##############################################################
+# Main function
+main() {
+  generate_python_client_library
+  start_python_test_client
+  run_python_test_script
+}
+
+##############################################################################
 # You should not need to edit anything below to run the demo.
-##############################################################
+# But of course, once you have run it successfully, feel free to modify.
+##############################################################################
 
-# Generated client directory
-API_DIR=${PWD}/py_client
+#======================================================
+function generate_python_client_library() {
 
-pushd $GEN_DIR
-./bin/generate_client -e -l python -o $API_DIR
-popd
+  # Generated client directory on host
+  API_DIR=${PWD}/py_client
 
+  pushd $GEN_DIR
+    ./bin/generate_client -e -l python -o $API_DIR
+  popd
+}
 
-# mount point for scripts and starting directory
-WORKDIR=/test/
+#======================================================
+function start_python_test_client() {
 
-docker run -d --rm						\
+  docker stop py_test 		# remove existing test client
+
+  # Mount point in client container for scripts and starting directory
+  WORKDIR=/test/
+
+  docker run -d --rm						\
   -e "DEBUG=False"						\
   --name py_test						\
   -v ${API_DIR}:${WORKDIR}py_client				\
@@ -44,7 +60,14 @@ docker run -d --rm						\
   python:3							\
   bash -c "sleep infinity"
 
-docker exec -it --user root py_test bash
+  echo "Loading Conjur Python client library..."
+  docker exec py_test ./init_python.sh
+}
 
-echo "Deleting py_test container as background job..."
-docker stop py_test > /dev/null 2>&1 &
+#======================================================
+function run_python_test_script() {
+  echo "Executing Python client test script..."
+  docker exec py_test ./python_client.py
+}
+
+main "$@"

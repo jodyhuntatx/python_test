@@ -1,7 +1,15 @@
 #!/bin/bash
 
+# Conjur Open API spec directory
+GEN_DIR=~/Conjur/conjur-openapi-spec-main
+
 # Generated client directory
 API_DIR=~/Conjur/python_test/py_client
+
+pushd $GEN_DIR
+./bin/generate_client -e -l python -o $API_DIR
+popd
+
 
 # mount point for scripts and starting directory
 WORKDIR=/test/
@@ -10,7 +18,7 @@ WORKDIR=/test/
 CONJUR_CERT=/Users/josephhunt/Conjur/cybrsm-demos/etc/conjur-master-minikube-dev.pem
 
 docker run -d --rm						\
-  -e "DEBUG=True"						\
+  -e "DEBUG=False"						\
   --name py_test						\
   -v ${API_DIR}:${WORKDIR}py_client				\
   -v ${PWD}/bin/init_python.sh:${WORKDIR}init_python.sh		\
